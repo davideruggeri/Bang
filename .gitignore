@@ -1,0 +1,33 @@
+# Node
+node_modules/
+dist/
+dist-ssr/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Vite
+.vite/
+
+# Java build artifacts
+bin/
+out/
+*.class
+
+# IntelliJ
+.idea/
+*.iml
+
+# IDE
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
