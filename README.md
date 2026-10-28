@@ -6,9 +6,26 @@ Si gioca **contro bot** in partita singola oppure **online con gli amici**: chi 
 
 Il motore di gioco è scritto in **Java**, l'interfaccia web in **React + TypeScript**; i due comunicano tramite un'API REST.
 
-<img width="600" alt="Online" src="https://github.com/user-attachments/assets/c026314d-15ed-4c4f-a8e0-f40bc35cd1eb" />
-<img width="600" alt="Prelobby" src="https://github.com/user-attachments/assets/817068c5-4e79-4eb5-92a4-ae4bf44da6a7" />
-<img width="600" alt="SinglePlayer" src="https://github.com/user-attachments/assets/e8b71239-50d7-465e-8aa1-7e6bcd8945b5" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/817068c5-4e79-4eb5-92a4-ae4bf44da6a7" alt="Menu iniziale con le modalità di gioco" width="80%">
+  <br>
+  <sub><i>Menu iniziale: partita singola, crea lobby o entra in lobby</i></sub>
+</p>
+
+<table align="center">
+  <tr>
+    <td align="center" width="50%">
+      <img src="https://github.com/user-attachments/assets/e8b71239-50d7-465e-8aa1-7e6bcd8945b5" alt="Partita singola contro i bot" width="100%">
+      <br>
+      <sub><i>Partita singola contro i bot</i></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="https://github.com/user-attachments/assets/c026314d-15ed-4c4f-a8e0-f40bc35cd1eb" alt="Modalità online con lobby e codice d'invito" width="100%">
+      <br>
+      <sub><i>Modalità online con codice d'invito</i></sub>
+    </td>
+  </tr>
+</table>
 
 ## Funzionalità
 
