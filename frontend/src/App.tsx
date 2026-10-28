@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import './App.css'
+import { CardFace, CardBack } from './cards'
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
 
@@ -364,37 +365,6 @@ function SetupScreen({ onStart, lobbyMode, onBack }: { onStart: (hostName: strin
 
 // ─── Card Component ───────────────────────────────────────────────────────────
 
-const CARD_IMAGE_MAP: Record<string, string> = {
-  "BANG!": "01_bang",
-  "Mancato!": "01_mancato",
-  "Birra": "01_birra",
-  "Saloon": "01_saloon",
-  "Panico!": "01_panico",
-  "Cat Balou": "01_catbalou",
-  "Diligenza": "01_diligenza",
-  "Wells Fargo": "01_wellsfargo",
-  "Gatling": "01_gatling",
-  "Indiani!": "01_indiani",
-  "Duello": "01_duello",
-  "Emporio": "01_emporio",
-  "Dinamite": "01_dinamite",
-  "Prigione": "01_prigione",
-  "Barile": "01_barile",
-  "Mirino": "01_mirino",
-  "Mustang": "01_mustang",
-  "Volcanic": "01_volcanic",
-  "Schofield": "01_schofield",
-  "Remington": "01_remington",
-  "Rev. Carabine": "01_carabine",
-  "Winchester": "01_winchester"
-};
-
-function getCardImageUrl(nome: string): string {
-  const fileKey = CARD_IMAGE_MAP[nome];
-  if (fileKey) return `/cards/${fileKey}.webp`;
-  return `/cards/01_back.webp`;
-}
-
 function getSuitEmoji(seme?: string): string {
   if (!seme) return '';
   switch (seme.toUpperCase()) {
@@ -436,7 +406,7 @@ function GameCard({ card, onClick, selected, imageMode = true, showOverlay = fal
       onClick={onClick} title={card.descrizione}>
       {imageMode ? (
         <div className="game-card-img-container">
-          <img src={getCardImageUrl(card.nome)} alt={card.nome} className="game-card-img" draggable={false} />
+          <CardFace nome={card.nome} />
           {(showOverlay && card.isEstrazione && card.seme && card.valore) && (
             <div className={`card-suit-overlay ${card.seme.toLowerCase()}`}>
               {valueLabel} <span className="suit-emoji">{suitEmoji}</span>
@@ -899,7 +869,7 @@ function TavoloScreen({ state, events, activeAction, onBackToMenu, myPlayerName 
             <div className="players-circle">
               <div className="center-table">
                 <div className={`center-deck ${canDrawFromDeck ? 'can-draw' : ''}`} onClick={onDeckClick}>
-                  <img src="/cards/01_back.webp" className="game-card-img" alt="Mazzo" draggable={false} />
+                  <CardBack />
                   <div className="deck-count">{state.carteRimanenti} carte</div>
                 </div>
                 {state.ultimaCartaScartata && (

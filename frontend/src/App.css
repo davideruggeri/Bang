@@ -2006,3 +2006,110 @@ body {
 .pulse-in {
   animation: pulse-in 0.4s ease-out forwards;
 }
+/* ─── Carte disegnate (grafica originale) ───────────────────────────────── */
+.cardface {
+  --cf-frame: #7a4a1c;
+  --cf-ink: #3a2208;
+  aspect-ratio: 250 / 389;
+  container-type: size;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 40%, #fbf1da 0%, #ead6ab 100%);
+  border: 0.45cqh solid var(--cf-frame);
+  outline-offset: 0;
+  color: var(--cf-ink);
+  user-select: none;
+}
+
+.cardface::before {
+  content: '';
+  position: absolute;
+  inset: 2.2cqh;
+  border: 0.35cqh dashed color-mix(in srgb, var(--cf-frame) 55%, transparent);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.cardface--equip {
+  --cf-frame: #2f5d8a;
+  --cf-ink: #1d3550;
+}
+
+.cardface--arma {
+  --cf-frame: #2f5d8a;
+  --cf-ink: #2a2a2a;
+}
+
+.cardface-name {
+  margin: 4.5cqh 4cqw 0;
+  padding: 1.5cqh 0;
+  font-family: 'Rye', Georgia, serif;
+  /* si riduce in base alla lunghezza del nome per stare su una riga */
+  font-size: min(10cqh, calc(84cqw / (var(--len, 8) * 0.66)));
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  color: var(--cf-ink);
+  border-bottom: 0.4cqh solid var(--cf-frame);
+}
+
+.cardface-art {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2.5cqh 9cqw;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cf-frame) 12%, transparent);
+  color: var(--cf-ink);
+}
+
+.cardface-art svg {
+  width: 74%;
+  height: 74%;
+}
+
+.cardface-fallback {
+  font-family: 'Rye', Georgia, serif;
+  font-size: 30cqh;
+}
+
+.cardface-foot {
+  margin: 0 5cqw 6.5cqh;
+  font-size: min(4.8cqh, 6.4cqw);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  text-align: center;
+  color: var(--cf-frame);
+}
+
+.cardback {
+  background:
+    repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.08) 0 4px, transparent 4px 9px),
+    linear-gradient(160deg, #6b3a12, #3a1d06);
+  border-color: #d4a017;
+  color: #d4a017;
+  align-items: center;
+  justify-content: center;
+  gap: 4cqh;
+}
+
+.cardback::before {
+  border-color: rgba(212, 160, 23, 0.6);
+}
+
+.cardback svg {
+  width: 62%;
+}
+
+.cardback-title {
+  font-family: 'Rye', Georgia, serif;
+  font-size: 11cqh;
+  letter-spacing: 0.12em;
+}

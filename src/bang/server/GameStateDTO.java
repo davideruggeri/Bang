@@ -124,7 +124,7 @@ public class GameStateDTO {
                 // Gli altri vedono che qualcuno ha pescato, ma vedono il Dorso
                 CardDTO hidden = new CardDTO();
                 hidden.nome = "Dorso";
-                hidden.imagePath = "/cards/01_back.webp";
+                hidden.imagePath = "";
                 hidden.timestamp = lastDrawn.timestamp;
                 hidden.isEstrazione = false;
                 hidden.ownerName = lastDrawn.ownerName;
@@ -202,7 +202,7 @@ public class GameStateDTO {
                 // Censura: mandiamo solo un "placeholder" per far contare le carte al frontend
                 CardDTO hidden = new CardDTO();
                 hidden.nome = "Dorso";
-                hidden.imagePath = "/cards/01_back.webp";
+                hidden.imagePath = "";
                 pdto.carteInMano.add(hidden);
             }
         }
