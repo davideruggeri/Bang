@@ -117,7 +117,7 @@ Per giocare con persone fuori dalla rete locale bisogna rendere raggiungibile la
 
 ## Autore
 
-Davide Ruggeri — progetto nato all'Università degli Studi di Brescia (Ingegneria Informatica) e poi esteso con interfaccia web e modalità online.
+Davide Ruggeri — progetto nato all'Università degli Studi di Brescia (Ingegneria Informatica) come gioco a linea di codice e poi esteso con interfaccia web e modalità online.
 
 ## Nota
 
