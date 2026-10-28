@@ -2113,3 +2113,69 @@ body {
   font-size: 11cqh;
   letter-spacing: 0.12em;
 }
+
+/* ─── Abbandono partita ─────────────────────────────────────────────────── */
+.btn-leave {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color .2s, border-color .2s, background .2s;
+  white-space: nowrap;
+}
+
+.btn-leave:hover,
+.btn-leave:focus-visible {
+  color: #fff;
+  border-color: var(--red);
+  background: rgba(139, 26, 26, 0.35);
+}
+
+.leave-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  padding: 16px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.leave-dialog {
+  background: var(--bg2);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+}
+
+.leave-dialog h2 {
+  color: var(--accent);
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+}
+
+.leave-dialog p {
+  color: var(--text-dim);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.leave-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.leave-actions button {
+  flex: 1;
+  justify-content: center;
+}

@@ -39,6 +39,8 @@ public class BangApiServer {
 
     // Lobby State
     private static volatile String lobbyCode = null;
+    // Messaggio mostrato agli altri giocatori quando qualcuno abbandona
+    private static volatile String abortMessage = null;
     private static volatile int expectedHumans = 0;
     private static final List<String> joinedHumanNames = new java.util.ArrayList<>();
     private static final List<String> pendingBotNames = new java.util.ArrayList<>();
@@ -55,6 +57,7 @@ public class BangApiServer {
     private static volatile GameStateDTO.CardDTO lastDrawnCard = null;
 
     public static void setLastPlayedCard(String nome, String actor, String target) {
+        AsyncGameProxy.checkAborted(); // una partita interrotta non deve sporcare lo stato
         lastDrawnCard = null; // Mutua esclusione: nasconde carte pescate vecchie
         if (nome == null) {
             lastPlayedCard = null;
@@ -80,6 +83,7 @@ public class BangApiServer {
     }
 
     public static void setLastDrawnCard(bang.Carta carta, boolean isEstrazione, String ownerName) {
+        AsyncGameProxy.checkAborted(); // una partita interrotta non deve sporcare lo stato
         lastPlayedCard = null; // Mutua esclusione: nasconde carte giocate vecchie
         lastPlayedActor = null;
         lastPlayedTarget = null;
@@ -110,6 +114,8 @@ public class BangApiServer {
      * frontend.
      */
     public static void addEvent(String msg) {
+        if (AsyncGameProxy.isAborted())
+            return; // log di una partita interrotta: scartato
         if (msg == null || eventi.size() >= MAX_EVENTI)
             return;
 
@@ -145,15 +151,18 @@ public class BangApiServer {
     // ──────────────────────────────────────────────────────────────────────────
 
     public static void setGameStatus(String status) {
+        AsyncGameProxy.checkAborted(); // una partita interrotta non deve sporcare lo stato
         gameStatus = status;
     }
 
     public static void setCurrentPlayer(String name) {
+        AsyncGameProxy.checkAborted(); // una partita interrotta non deve sporcare lo stato
         currentPlayerName = name;
     }
 
     /** Imposta il prompt attivo — il browser lo mostra come pulsanti. */
     public static void setPrompt(String target, String tipo, String msg, String[] opzioni) {
+        AsyncGameProxy.checkAborted(); // una partita interrotta non deve sporcare lo stato
         promptTarget = target;
         promptTipo = tipo;
         promptMsg = msg;
@@ -180,6 +189,7 @@ public class BangApiServer {
         server.createContext("/api/action", new PlayerActionHandler());
         server.createContext("/api/reset", new ResetHandler());
         server.createContext("/api/join", new JoinHandler()); // Nuovo endpoint
+        server.createContext("/api/leave", new LeaveHandler());
 
         server.setExecutor(java.util.concurrent.Executors.newCachedThreadPool());
         server.start();
@@ -190,8 +200,10 @@ public class BangApiServer {
 
     /** Reset totale dello stato per una nuova partita. */
     public static void reset() {
+        AsyncGameProxy.abortGame();
         currentGame = null;
         gameStatus = "IDLE";
+        abortMessage = null;
         lobbyCode = null;
         joinedHumanNames.clear();
         expectedHumans = 0;
@@ -261,6 +273,11 @@ public class BangApiServer {
             String json;
             if (currentGame == null && (gameStatus == null || gameStatus.equals("IDLE"))) {
                 json = "{\"status\":\"IDLE\"}";
+            } else if ("ANNULLATA".equals(gameStatus)) {
+                JsonObject annullata = new JsonObject();
+                annullata.addProperty("status", "ANNULLATA");
+                annullata.addProperty("abortMessage", abortMessage);
+                json = annullata.toString();
             } else {
                 GameStateDTO dto = GameStateDTO.from(
                         currentGame, gameStatus, currentPlayerName,
@@ -298,7 +315,8 @@ public class BangApiServer {
                 return;
             }
 
-            if (gameStatus != null && !gameStatus.equals("IDLE") && !gameStatus.startsWith("FINITA")) {
+            if (gameStatus != null && !gameStatus.equals("IDLE") && !gameStatus.startsWith("FINITA")
+                    && !gameStatus.equals("ANNULLATA")) {
                 sendJson(ex, 409, "{\"error\":\"Partita già in corso o in lobby\"}");
                 return;
             }
@@ -463,9 +481,63 @@ public class BangApiServer {
                 ex.sendResponseHeaders(204, -1);
                 return;
             }
-            reset();
-            // Risveglia il thread principale (Main.java) se è bloccato in waitForInput
-            AsyncGameProxy.submitInput(null);
+            reset(); // interrompe anche la partita in corso
+            sendJson(ex, 200, "{\"success\":true}");
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // POST /api/leave → un giocatore abbandona la lobby o la partita in corso
+    // Body JSON: { "player": "Nome" }
+    // La partita viene interrotta per tutti; gli altri giocatori vedono lo stato
+    // ANNULLATA con il nome di chi è uscito.
+    // ──────────────────────────────────────────────────────────────────────────
+
+    static class LeaveHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange ex) throws IOException {
+            enableCORS(ex);
+            if ("OPTIONS".equals(ex.getRequestMethod())) {
+                ex.sendResponseHeaders(204, -1);
+                return;
+            }
+            if (!"POST".equals(ex.getRequestMethod())) {
+                ex.sendResponseHeaders(405, -1);
+                return;
+            }
+
+            String nome = "";
+            try {
+                JsonObject obj = JsonParser.parseString(readBody(ex)).getAsJsonObject();
+                if (obj.has("player"))
+                    nome = obj.get("player").getAsString().trim();
+            } catch (Exception e) {
+                // corpo assente o non valido: abbandono anonimo
+            }
+
+            synchronized (BangApiServer.class) {
+                if ("IDLE".equals(gameStatus) || "ANNULLATA".equals(gameStatus)) {
+                    sendJson(ex, 200, "{\"success\":true}");
+                    return;
+                }
+                boolean inLobby = "WAITING_FOR_PLAYERS".equals(gameStatus);
+                String host = joinedHumanNames.isEmpty() ? null : joinedHumanNames.get(0);
+
+                // In lobby, un ospite che esce libera solo il suo posto
+                if (inLobby && !nome.isEmpty() && !nome.equals(host)) {
+                    joinedHumanNames.remove(nome);
+                    sendJson(ex, 200, "{\"success\":true}");
+                    return;
+                }
+
+                reset(); // interrompe la partita e chiude la lobby
+                gameStatus = "ANNULLATA";
+                String chi = nome.isEmpty() ? "Un giocatore" : nome;
+                abortMessage = inLobby
+                        ? chi + " ha chiuso la lobby."
+                        : chi + " ha abbandonato la partita.";
+            }
+            System.out.println("[SKIP] " + abortMessage);
             sendJson(ex, 200, "{\"success\":true}");
         }
     }

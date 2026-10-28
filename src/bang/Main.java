@@ -25,13 +25,10 @@ public class Main {
 
         while (giocaAncora) {
             // Aspetta che il browser invii POST /api/start con la configurazione
-            // Aspetta che il browser invii POST /api/start con la configurazione
-            Object input = AsyncGameProxy.waitForInput();
-            if (input == null || !(input instanceof GameConfig)) {
-                System.out.println("--- Reset ricevuto o input invalido. In attesa di nuova configurazione... ---");
-                continue; // Non uscire, aspetta ancora
+            GameConfig config = AsyncGameProxy.waitForConfig();
+            if (config == null) {
+                continue;
             }
-            GameConfig config = (GameConfig) input;
 
             System.out.println("=== PARTITA RICEVUTA DAL BROWSER ===");
             System.out.println("Giocatori: " + config.numGiocatori + " | Umani: " + config.numUmani);
@@ -62,69 +59,77 @@ public class Main {
             BangApiServer.currentGame = partita;
 
             Classifica finalClassifica = classifica;
+            int generazione = AsyncGameProxy.currentGeneration();
             Thread gameThread = new Thread(() -> {
-                partita.inizioPartita();
-                System.out.println("\n=== INIZIO PARTITA ===");
-
-                RisultatoPartita risultato = RisultatoPartita.IN_CORSO;
-
-                while (risultato == RisultatoPartita.IN_CORSO) {
-                    // Controllo se la partita è stata resettata esternamente
-                    if (BangApiServer.currentGame != partita) {
-                        System.out.println("--- Partita interrotta (reset). ---");
-                        return;
-                    }
-
-                    if (partita.getListaGiocatori().isEmpty())
-                        break;
-
-                    int idx = partita.getGiocatoreCorrente() % partita.getListaGiocatori().size();
-                    Persona giocatore = partita.getListaGiocatori().get(idx);
-
-                    BangApiServer.setCurrentPlayer(giocatore.getNome());
-                    System.out.println("\n[SKIP] =============================");
-                    System.out.println(
-                            "[SKIP] 🔔 È il turno di: " + giocatore.getNome() + " [" + giocatore.getRuolo() + "]");
-                    bang.server.BangApiServer
-                            .addFormattedEvent("🔔 È il turno di: {I:PLAYER} {P:" + giocatore.getNome() + "}");
-
-                    giocatore.turnoGiocatore(partita);
-
-                    risultato = partita.verificaVittoria();
-                    if (risultato != RisultatoPartita.IN_CORSO) {
-                        // Se la partita è finita durante il turno, aggiorniamo subito lo stato
-                        BangApiServer.setGameStatus("FINITA: " + risultato);
-                        BangApiServer.clearPrompt();
-                    }
-
-                    if (risultato == RisultatoPartita.IN_CORSO) {
-                        // FIX: Avanza il turno solo se il giocatore NON è stato eliminato.
-                        // Se è stato eliminato (es. Dinamite), il prossimo giocatore è già "scivolato"
-                        // all'indice corrente.
-                        if (partita.getListaGiocatori().contains(giocatore)) {
-                            partita.cambioTurno();
-                        }
-                    }
-                }
-
-                System.out.println("\n=== PARTITA CONCLUSA: " + risultato + " ===");
-                BangApiServer.setGameStatus("FINITA: " + risultato);
-                BangApiServer.clearPrompt();
-
-                if (config.isTorneo && risultato != RisultatoPartita.IN_CORSO && finalClassifica != null) {
-                    finalClassifica.distribuisciPremi(risultato, config.numGiocatori, partita);
-                    finalClassifica.salvaSuFile("classifica.csv");
+                AsyncGameProxy.bindCurrentThread(generazione);
+                try {
+                    giocaPartita(partita, config, finalClassifica);
+                } catch (AsyncGameProxy.GameAbortedException e) {
+                    System.out.println("--- Partita interrotta: un giocatore ha abbandonato. ---");
                 }
             });
             gameThread.setDaemon(true); // Impostato a daemon così non blocca la chiusura se JVM termina
             gameThread.start();
-
-            // Rimosso gameThread.join() per permettere al main loop di restare in ascolto
-            // di nuovi start/reset senza essere bloccato dall'esecuzione della partita.
-            // Il reset del server (StartGameHandler) invierà un notify all'AsyncGameProxy
-            // che sbloccherà il main thread.
         }
 
         System.out.println("Server in chiusura. Grazie per aver giocato!");
+    }
+
+    private static void giocaPartita(Partita partita, GameConfig config, Classifica finalClassifica) {
+        partita.inizioPartita();
+        System.out.println("\n=== INIZIO PARTITA ===");
+
+        RisultatoPartita risultato = RisultatoPartita.IN_CORSO;
+
+        while (risultato == RisultatoPartita.IN_CORSO) {
+            // Controllo se la partita è stata resettata esternamente
+            if (BangApiServer.currentGame != partita) {
+                System.out.println("--- Partita interrotta (reset). ---");
+                return;
+            }
+
+            if (partita.getListaGiocatori().isEmpty())
+                break;
+
+            int idx = partita.getGiocatoreCorrente() % partita.getListaGiocatori().size();
+            Persona giocatore = partita.getListaGiocatori().get(idx);
+
+            BangApiServer.setCurrentPlayer(giocatore.getNome());
+            System.out.println("\n[SKIP] =============================");
+            System.out.println(
+                    "[SKIP] 🔔 È il turno di: " + giocatore.getNome() + " [" + giocatore.getRuolo() + "]");
+            bang.server.BangApiServer
+                    .addFormattedEvent("🔔 È il turno di: {I:PLAYER} {P:" + giocatore.getNome() + "}");
+
+            giocatore.turnoGiocatore(partita);
+
+            risultato = partita.verificaVittoria();
+            if (risultato != RisultatoPartita.IN_CORSO) {
+                // Se la partita è finita durante il turno, aggiorniamo subito lo stato
+                BangApiServer.setGameStatus("FINITA: " + risultato);
+                BangApiServer.clearPrompt();
+            }
+
+            if (risultato == RisultatoPartita.IN_CORSO) {
+                // FIX: Avanza il turno solo se il giocatore NON è stato eliminato.
+                // Se è stato eliminato (es. Dinamite), il prossimo giocatore è già "scivolato"
+                // all'indice corrente.
+                if (partita.getListaGiocatori().contains(giocatore)) {
+                    partita.cambioTurno();
+                }
+            }
+        }
+
+        if (BangApiServer.currentGame != partita) {
+            return; // partita resettata mentre terminava
+        }
+        System.out.println("\n=== PARTITA CONCLUSA: " + risultato + " ===");
+        BangApiServer.setGameStatus("FINITA: " + risultato);
+        BangApiServer.clearPrompt();
+
+        if (config.isTorneo && risultato != RisultatoPartita.IN_CORSO && finalClassifica != null) {
+            finalClassifica.distribuisciPremi(risultato, config.numGiocatori, partita);
+            finalClassifica.salvaSuFile("classifica.csv");
+        }
     }
 }

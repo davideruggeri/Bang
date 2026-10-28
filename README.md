@@ -17,6 +17,7 @@ Il motore di gioco è scritto in **Java**, l'interfaccia web in **React + TypeSc
 - **Ruoli segreti e personaggi** con abilità che modificano le regole (distanza, vite, pescate)
 - **Sistema di distanza e armi**: gittata delle armi, Mustang e Mirino
 - **Carte azione ed equipaggiamento**, estrazioni con seme e valore (Barile, Dinamite, Prigione)
+- **Abbandono della partita** in qualsiasi momento: in online la partita si chiude per tutti e gli altri giocatori vedono chi è uscito; in lobby un ospite può uscire liberando il suo posto
 - **Ogni giocatore vede solo le proprie carte**: lo stato inviato a ciascun browser nasconde la mano degli altri
 - **Interfaccia animata**: carte giocate e pescate, registro della partita colorato, cimitero dei giocatori eliminati
 - **Carte con grafica originale** disegnate in SVG/CSS
@@ -45,6 +46,7 @@ Il motore di gioco è scritto in **Java**, l'interfaccia web in **React + TypeSc
 | `/api/join` | POST | Unisce un giocatore alla lobby tramite codice e nome |
 | `/api/state?player=Nome` | GET | Stato della partita visto da quel giocatore |
 | `/api/action` | POST | Risposta del giocatore alla scelta richiesta |
+| `/api/leave` | POST | Il giocatore abbandona la lobby o la partita in corso |
 | `/api/reset` | POST | Termina la partita e torna in attesa |
 
 ## Requisiti

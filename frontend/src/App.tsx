@@ -54,6 +54,7 @@ interface GameState {
   lobbyCode?: string
   expectedHumans?: number
   joinedHumans?: string[]
+  abortMessage?: string
 }
 
 // ─── Icone ────────────────────────────────────────────────────────────────────
@@ -1099,6 +1100,49 @@ function GameEndScreen({ state, onRestart }: { state: GameState, onRestart: () =
 }
 
 
+// ─── Abbandono partita ────────────────────────────────────────────────────────
+
+function LeaveConfirm({ online, onConfirm, onCancel }: { online: boolean, onConfirm: () => void, onCancel: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onCancel])
+
+  return (
+    <div className="leave-backdrop" onClick={onCancel}>
+      <div className="leave-dialog" role="dialog" aria-modal="true" aria-labelledby="leave-title"
+        onClick={e => e.stopPropagation()}>
+        <h2 id="leave-title">Abbandonare la partita?</h2>
+        <p>
+          {online
+            ? 'La partita terminerà per tutti i giocatori collegati.'
+            : 'La partita verrà chiusa e tornerai al menu.'}
+        </p>
+        <div className="leave-actions">
+          <button className="btn-option" onClick={onCancel} autoFocus>Continua a giocare</button>
+          <button className="btn-no" onClick={onConfirm}>Abbandona</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function GameAbortedScreen({ message, onBack }: { message?: string, onBack: () => void }) {
+  return (
+    <div className="end-screen-overlay">
+      <div className="victory-card">
+        <div className="victory-icon">🏳️</div>
+        <h2 className="victory-title">Partita interrotta</h2>
+        <p className="victory-subtitle">{message || 'Un giocatore ha abbandonato la partita.'}</p>
+        <button className="btn-primary start-btn" onClick={onBack}>
+          Torna al menu
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── App Principale ────────────────────────────────────────────────────────────
 
 function App() {
@@ -1110,6 +1154,7 @@ function App() {
   const [eventQueue, setEventQueue] = useState<string[]>([])
   const [visibleEvents, setVisibleEvents] = useState<string[]>([])
   const [activeAction, setActiveAction] = useState<string | null>(null)
+  const [confirmLeave, setConfirmLeave] = useState(false)
   const handledEventsCount = useRef(0)
 
   const fetchState = useCallback(async () => {
@@ -1124,7 +1169,7 @@ function App() {
         }
         return data;
       })
-      if (data.status && data.status !== 'IDLE' && data.status !== 'WAITING_FOR_PLAYERS') {
+      if (data.status && data.status !== 'IDLE' && data.status !== 'WAITING_FOR_PLAYERS' && data.status !== 'ANNULLATA') {
         // Auto-start solo se il gioco è già in corso e siamo un giocatore noto o Single Player
         if (lobbyMode === 'SINGLE' || myPlayerName) {
           setStarted(true)
@@ -1212,8 +1257,8 @@ function App() {
     setIsLobbyCreator(false);
   };
 
-  const handleBackToMenu = async () => {
-    // Resettiamo subito lo stato locale per evitare flicker grafici
+  // Torna al menu solo su questo browser, senza toccare il server
+  const resetLocal = () => {
     setStarted(false);
     setLobbyMode(null);
     setMyPlayerName('');
@@ -1221,7 +1266,14 @@ function App() {
     setGameState(null);
     setVisibleEvents([]);
     setEventQueue([]);
+    setActiveAction(null);
+    setConfirmLeave(false);
     handledEventsCount.current = 0;
+  };
+
+  const handleBackToMenu = async () => {
+    // Resettiamo subito lo stato locale per evitare flicker grafici
+    resetLocal();
 
     try {
       await fetch('/api/reset', { method: 'POST' });
@@ -1229,6 +1281,31 @@ function App() {
       console.error("Errore durante il reset:", e);
     }
   };
+
+  // Abbandona la lobby o la partita in corso
+  const handleLeave = async () => {
+    const name = myPlayerName;
+    const isOnline = lobbyMode !== 'SINGLE';
+    const eliminated = !!gameState?.giocatori && !gameState.giocatori.some(
+      p => p.nome.trim().toLowerCase() === name.trim().toLowerCase());
+    const inGame = gameState?.status === 'IN_CORSO';
+    resetLocal();
+
+    // In online, chi è già eliminato esce senza fermare la partita degli altri
+    if (isOnline && inGame && eliminated) return;
+
+    try {
+      await fetch('/api/leave', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player: name })
+      });
+    } catch (e) {
+      console.error("Errore durante l'abbandono:", e);
+    }
+  };
+
+  const isPlaying = started && gameState?.status === 'IN_CORSO';
 
   return (
     <div className="app">
@@ -1240,7 +1317,20 @@ function App() {
           </div>
         )}
         <div className="server-dot" title="Server Java connesso" />
+        {isPlaying && (
+          <button className="btn-leave" onClick={() => setConfirmLeave(true)}>
+            🏳️ Abbandona
+          </button>
+        )}
       </header>
+
+      {confirmLeave && isPlaying && (
+        <LeaveConfirm
+          online={lobbyMode !== 'SINGLE'}
+          onConfirm={handleLeave}
+          onCancel={() => setConfirmLeave(false)}
+        />
+      )}
 
       <main className="app-main">
         {!started
@@ -1259,7 +1349,9 @@ function App() {
               />
           )
           : gameState && gameState.status === 'WAITING_FOR_PLAYERS'
-            ? <LobbyScreen state={gameState} myName={myPlayerName} isHost={isLobbyCreator} onBack={handleBackToMenu} />
+            ? <LobbyScreen state={gameState} myName={myPlayerName} isHost={isLobbyCreator} onBack={handleLeave} />
+            : gameState && gameState.status === 'ANNULLATA'
+              ? <GameAbortedScreen message={gameState.abortMessage} onBack={resetLocal} />
             : visibleGameState && visibleGameState.status.startsWith('FINITA')
               ? <GameEndScreen state={visibleGameState} onRestart={handleBackToMenu} />
               : visibleGameState && visibleGameState.status !== 'IDLE'

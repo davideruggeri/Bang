@@ -15,6 +15,7 @@ public class Persona {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+        AsyncGameProxy.checkAborted();
     }
 
     private String ruolo;

@@ -240,6 +240,7 @@ public class Bot extends Persona {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+        AsyncGameProxy.checkAborted();
     }
 
     private void rimuoviCartaDaManoBot(Carta carta, Partita partita) {
