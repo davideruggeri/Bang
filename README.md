@@ -6,9 +6,9 @@ Si gioca **contro bot** in partita singola oppure **online con gli amici**: chi 
 
 Il motore di gioco è scritto in **Java**, l'interfaccia web in **React + TypeScript**; i due comunicano tramite un'API REST.
 
-<!-- Screenshot: salva un'immagine in docs/screenshot.png e togli il commento alla riga sotto
-![Partita in corso](docs/screenshot.png)
--->
+<img width="600" alt="Online" src="https://github.com/user-attachments/assets/c026314d-15ed-4c4f-a8e0-f40bc35cd1eb" />
+<img width="600" alt="Prelobby" src="https://github.com/user-attachments/assets/817068c5-4e79-4eb5-92a4-ae4bf44da6a7" />
+<img width="600" alt="SinglePlayer" src="https://github.com/user-attachments/assets/e8b71239-50d7-465e-8aa1-7e6bcd8945b5" />
 
 ## Funzionalità
 
