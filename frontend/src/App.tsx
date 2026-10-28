@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import './App.css'
-import { CardFace, CardBack } from './cards'
+import { CardFace, CardBack, hasCardArt } from './cards'
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
 
@@ -467,7 +467,7 @@ function PromptPanel({ prompt }: { prompt: PromptDTO }) {
               else if (op.toLowerCase().includes('scarta')) extraClass = 'btn-azione-scarta';
               else if (op.toLowerCase().includes('termina') || op.toLowerCase().includes('passa')) extraClass = 'btn-azione-termina';
 
-              if (prompt.tipo === 'CARD' && CARD_IMAGE_MAP[op]) {
+              if (prompt.tipo === 'CARD' && hasCardArt(op)) {
                 const fakeCard = { nome: op, descrizione: '' } as CardDTO;
                 return (
                   <div key={i} style={{ display: 'flex', justifyContent: 'center' }}>

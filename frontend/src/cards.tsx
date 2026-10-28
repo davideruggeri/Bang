@@ -210,6 +210,12 @@ const ART: Record<string, CardArt> = {
   'Winchester': { tipo: 'arma', icon: revolver, gittata: 5 },
 }
 
+// Vero se la carta ha una grafica disegnata (cioè è una carta del gioco base)
+// eslint-disable-next-line react-refresh/only-export-components
+export function hasCardArt(nome: string): boolean {
+  return nome in ART
+}
+
 const TIPO_LABEL: Record<Tipo, string> = {
   azione: 'Azione',
   equip: 'Equipaggiamento',
