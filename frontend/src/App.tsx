@@ -151,6 +151,10 @@ function PreLobby({ onSelect }: { onSelect: (mode: 'SINGLE' | 'ONLINE' | 'JOIN')
             <button className="btn-primary">Entra</button>
           </div>
         </div>
+
+        <p className="pre-lobby-disclaimer">
+          Progetto didattico non commerciale, ispirato al gioco di carte BANG!. "BANG!" è un marchio di dV Giochi; questo progetto non è affiliato né approvato da dV Giochi. Le grafiche delle carte sono originali.
+        </p>
       </div>
     </div>
   );

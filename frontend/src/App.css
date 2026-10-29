@@ -1803,6 +1803,17 @@ body {
   width: 95%;
 }
 
+.pre-lobby-disclaimer {
+  margin-top: 32px;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  opacity: 0.6;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+
 .setup-subtitle {
   color: var(--text-dim);
   margin-bottom: 40px;
